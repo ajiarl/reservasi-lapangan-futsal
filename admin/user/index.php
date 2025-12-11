@@ -1,7 +1,7 @@
 <?php
 /**
  * List Users
- * Admin Panel - Data User Management
+ * Admin Panel - Data User Management dengan Pencarian dan Filter
  */
 
 require_once '../auth.php';
@@ -9,6 +9,10 @@ require_once '../db.php';
 
 $success = $_GET['success'] ?? '';
 $error = $_GET['error'] ?? '';
+
+// Handle Search and Filter
+$search = trim($_GET['search'] ?? '');
+$filter_role = trim($_GET['role'] ?? '');
 
 // Handle Delete User
 if (isset($_GET['delete'])) {
@@ -38,8 +42,30 @@ if (isset($_GET['delete'])) {
     exit;
 }
 
+// Build query with search and filter
+$sql = "SELECT * FROM users WHERE 1=1";
+$params = [];
+
+// Add search condition
+if (!empty($search)) {
+    $sql .= " AND (nama_pelanggan LIKE ? OR email LIKE ? OR no_hp LIKE ? OR alamat LIKE ?)";
+    $search_param = "%$search%";
+    $params[] = $search_param;
+    $params[] = $search_param;
+    $params[] = $search_param;
+    $params[] = $search_param;
+}
+
+// Add role filter
+if (!empty($filter_role)) {
+    $sql .= " AND role = ?";
+    $params[] = $filter_role;
+}
+
+$sql .= " ORDER BY user_id DESC";
+
 // Fetch all users
-$users = fetchAll("SELECT * FROM users ORDER BY user_id DESC");
+$users = fetchAll($sql, $params);
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -116,9 +142,48 @@ $users = fetchAll("SELECT * FROM users ORDER BY user_id DESC");
                 </div>
             </div>
 
+            <!-- Filter Card -->
+            <div class="card" style="margin-bottom: 20px;">
+                <div class="card-body">
+                    <form method="GET" action="" style="display: grid; grid-template-columns: 2fr 1fr auto; gap: 15px; align-items: end;">
+                        <div class="form-group" style="margin: 0;">
+                            <label for="search" style="margin-bottom: 5px;">Cari User</label>
+                            <input 
+                                type="text" 
+                                id="search"
+                                name="search" 
+                                class="form-control" 
+                                placeholder="Nama, email, no HP, atau alamat"
+                                value="<?php echo htmlspecialchars($search); ?>"
+                            >
+                        </div>
+                        <div class="form-group" style="margin: 0;">
+                            <label for="role" style="margin-bottom: 5px;">Role</label>
+                            <select name="role" id="role" class="form-control">
+                                <option value="">Semua Role</option>
+                                <option value="pelanggan" <?php echo ($filter_role === 'pelanggan') ? 'selected' : ''; ?>>Pelanggan</option>
+                                <option value="admin" <?php echo ($filter_role === 'admin') ? 'selected' : ''; ?>>Admin</option>
+                            </select>
+                        </div>
+                        <div class="d-flex gap-10">
+                            <button type="submit" class="btn btn-primary">🔍 Filter</button>
+                            <?php if (!empty($search) || !empty($filter_role)): ?>
+                                <a href="index.php" class="btn btn-secondary">✕ Reset</a>
+                            <?php endif; ?>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
             <div class="card">
                 <div class="card-header d-flex justify-between align-center">
-                    <h3>Daftar User</h3>
+                    <h3>Daftar User
+                        <?php if (!empty($search) || !empty($filter_role)): ?>
+                            <span style="font-size: 14px; color: #9D4EDD; font-weight: normal;">
+                                (<?php echo count($users); ?> hasil)
+                            </span>
+                        <?php endif; ?>
+                    </h3>
                     <a href="create.php" class="btn btn-primary">+ Tambah User</a>
                 </div>
                 <div class="card-body">
@@ -138,7 +203,13 @@ $users = fetchAll("SELECT * FROM users ORDER BY user_id DESC");
                             <tbody>
                                 <?php if (empty($users)): ?>
                                     <tr>
-                                        <td colspan="7" class="text-center">Belum ada data user</td>
+                                        <td colspan="7" class="text-center">
+                                            <?php if (!empty($search)): ?>
+                                                Tidak ada hasil untuk pencarian "<?php echo htmlspecialchars($search); ?>"
+                                            <?php else: ?>
+                                                Belum ada data user
+                                            <?php endif; ?>
+                                        </td>
                                     </tr>
                                 <?php else: ?>
                                     <?php foreach ($users as $user): ?>

@@ -1,7 +1,7 @@
 <?php
 /**
  * List Jadwal Lapangan
- * Admin Panel - Master Data Jadwal
+ * Admin Panel - Master Data Jadwal dengan Pencarian dan Filter
  */
 
 require_once '../auth.php';
@@ -9,6 +9,11 @@ require_once '../db.php';
 
 $success = $_GET['success'] ?? '';
 $error = $_GET['error'] ?? '';
+
+// Handle Search and Filter
+$search = trim($_GET['search'] ?? '');
+$filter_lapangan = intval($_GET['lapangan'] ?? 0);
+$filter_hari = trim($_GET['hari'] ?? '');
 
 // Handle Delete
 if (isset($_GET['delete'])) {
@@ -32,15 +37,42 @@ if (isset($_GET['delete'])) {
     exit;
 }
 
-// Fetch all jadwal with lapangan info
-$jadwal_list = fetchAll("
-    SELECT j.*, l.nama_lapangan, l.jenis_lapangan
-    FROM jadwallapangan j
-    JOIN lapangan l ON j.Lapangan_lapangan_id = l.lapangan_id
-    ORDER BY l.nama_lapangan, 
-             FIELD(j.hari, 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'),
-             j.jam_mulai_slot
-");
+// Fetch lapangan for filter dropdown
+$lapangan_options = fetchAll("SELECT lapangan_id, nama_lapangan FROM lapangan WHERE is_active = 1 ORDER BY nama_lapangan");
+
+// Build query with JOIN, search and filter
+$sql = "SELECT j.*, l.nama_lapangan, l.jenis_lapangan
+        FROM jadwallapangan j
+        JOIN lapangan l ON j.Lapangan_lapangan_id = l.lapangan_id
+        WHERE 1=1";
+$params = [];
+
+// Add search condition
+if (!empty($search)) {
+    $sql .= " AND (l.nama_lapangan LIKE ? OR l.jenis_lapangan LIKE ?)";
+    $search_param = "%$search%";
+    $params[] = $search_param;
+    $params[] = $search_param;
+}
+
+// Add lapangan filter
+if ($filter_lapangan > 0) {
+    $sql .= " AND j.Lapangan_lapangan_id = ?";
+    $params[] = $filter_lapangan;
+}
+
+// Add hari filter
+if (!empty($filter_hari)) {
+    $sql .= " AND j.hari = ?";
+    $params[] = $filter_hari;
+}
+
+$sql .= " ORDER BY l.nama_lapangan, 
+         FIELD(j.hari, 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'),
+         j.jam_mulai_slot";
+
+// Fetch all jadwal
+$jadwal_list = fetchAll($sql, $params);
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -90,9 +122,66 @@ $jadwal_list = fetchAll("
                 </div>
             <?php endif; ?>
 
+            <!-- Filter Card -->
+            <div class="card" style="margin-bottom: 20px;">
+                <div class="card-body">
+                    <form method="GET" action="" style="display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 15px; align-items: end;">
+                        <div class="form-group" style="margin: 0;">
+                            <label for="search" style="margin-bottom: 5px;">Cari Lapangan</label>
+                            <input 
+                                type="text" 
+                                id="search"
+                                name="search" 
+                                class="form-control" 
+                                placeholder="Nama atau jenis lapangan"
+                                value="<?php echo htmlspecialchars($search); ?>"
+                            >
+                        </div>
+                        <div class="form-group" style="margin: 0;">
+                            <label for="lapangan" style="margin-bottom: 5px;">Lapangan</label>
+                            <select name="lapangan" id="lapangan" class="form-control">
+                                <option value="">Semua Lapangan</option>
+                                <?php foreach ($lapangan_options as $lap): ?>
+                                    <option value="<?php echo $lap['lapangan_id']; ?>" 
+                                        <?php echo ($filter_lapangan == $lap['lapangan_id']) ? 'selected' : ''; ?>>
+                                        <?php echo htmlspecialchars($lap['nama_lapangan']); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin: 0;">
+                            <label for="hari" style="margin-bottom: 5px;">Hari</label>
+                            <select name="hari" id="hari" class="form-control">
+                                <option value="">Semua Hari</option>
+                                <?php 
+                                $hari_list = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+                                foreach ($hari_list as $h): 
+                                ?>
+                                    <option value="<?php echo $h; ?>" <?php echo ($filter_hari == $h) ? 'selected' : ''; ?>>
+                                        <?php echo $h; ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="d-flex gap-10">
+                            <button type="submit" class="btn btn-primary">🔍 Filter</button>
+                            <?php if (!empty($search) || $filter_lapangan > 0 || !empty($filter_hari)): ?>
+                                <a href="index.php" class="btn btn-secondary">✕ Reset</a>
+                            <?php endif; ?>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
             <div class="card">
                 <div class="card-header d-flex justify-between align-center">
-                    <h3>Daftar Jadwal Slot Waktu</h3>
+                    <h3>Daftar Jadwal Slot Waktu
+                        <?php if (!empty($search) || $filter_lapangan > 0 || !empty($filter_hari)): ?>
+                            <span style="font-size: 14px; color: #9D4EDD; font-weight: normal;">
+                                (<?php echo count($jadwal_list); ?> hasil)
+                            </span>
+                        <?php endif; ?>
+                    </h3>
                     <a href="create.php" class="btn btn-primary">+ Tambah Jadwal</a>
                 </div>
                 <div class="card-body">
@@ -113,7 +202,13 @@ $jadwal_list = fetchAll("
                             <tbody>
                                 <?php if (empty($jadwal_list)): ?>
                                     <tr>
-                                        <td colspan="8" class="text-center">Belum ada data jadwal</td>
+                                        <td colspan="8" class="text-center">
+                                            <?php if (!empty($search)): ?>
+                                                Tidak ada hasil untuk pencarian "<?php echo htmlspecialchars($search); ?>"
+                                            <?php else: ?>
+                                                Belum ada data jadwal
+                                            <?php endif; ?>
+                                        </td>
                                     </tr>
                                 <?php else: ?>
                                     <?php foreach ($jadwal_list as $jadwal): ?>

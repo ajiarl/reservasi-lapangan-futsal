@@ -1,7 +1,7 @@
 <?php
 /**
  * List Payment
- * Admin Panel - Data Payment
+ * Admin Panel - Data Payment dengan Pencarian dan Filter
  */
 
 require_once '../auth.php';
@@ -9,6 +9,13 @@ require_once '../db.php';
 
 $success = $_GET['success'] ?? '';
 $error = $_GET['error'] ?? '';
+
+// Handle Search and Filter
+$search = trim($_GET['search'] ?? '');
+$filter_status = trim($_GET['status'] ?? '');
+$filter_metode = trim($_GET['metode'] ?? '');
+$start_date = trim($_GET['start_date'] ?? '');
+$end_date = trim($_GET['end_date'] ?? '');
 
 // Handle Konfirmasi Lunas
 if (isset($_GET['confirm'])) {
@@ -35,9 +42,8 @@ if (isset($_GET['confirm'])) {
     exit;
 }
 
-// Fetch all payments with booking and user info
-$payments = fetchAll("
-    SELECT 
+// Build query with JOIN, search and filter
+$sql = "SELECT 
         p.*,
         b.tgl_booking,
         b.total_harga as booking_total,
@@ -48,8 +54,53 @@ $payments = fetchAll("
     FROM payment p
     JOIN bookings b ON p.Bookings_booking_id = b.booking_id
     JOIN users u ON b.users_user_id = u.user_id
-    ORDER BY p.payment_id DESC
-");
+    WHERE 1=1";
+
+$params = [];
+
+// Add search condition
+if (!empty($search)) {
+    $sql .= " AND (u.nama_pelanggan LIKE ? OR u.email LIKE ? OR u.no_hp LIKE ? OR p.payment_id LIKE ? OR b.booking_id LIKE ?)";
+    $search_param = "%$search%";
+    $params[] = $search_param;
+    $params[] = $search_param;
+    $params[] = $search_param;
+    $params[] = $search_param;
+    $params[] = $search_param;
+}
+
+// Add status filter
+if (!empty($filter_status)) {
+    $sql .= " AND p.status_payment = ?";
+    $params[] = $filter_status;
+}
+
+// Add metode filter
+if (!empty($filter_metode)) {
+    $sql .= " AND p.metode_pembayaran = ?";
+    $params[] = $filter_metode;
+}
+
+// Add date range filter
+if (!empty($start_date) && !empty($end_date)) {
+    $sql .= " AND p.tgl_pembayaran BETWEEN ? AND ?";
+    $params[] = $start_date;
+    $params[] = $end_date;
+} elseif (!empty($start_date)) {
+    $sql .= " AND p.tgl_pembayaran >= ?";
+    $params[] = $start_date;
+} elseif (!empty($end_date)) {
+    $sql .= " AND p.tgl_pembayaran <= ?";
+    $params[] = $end_date;
+}
+
+$sql .= " ORDER BY p.payment_id DESC";
+
+// Fetch all payments
+$payments = fetchAll($sql, $params);
+
+// Get unique metode pembayaran for filter
+$metode_list = fetchAll("SELECT DISTINCT metode_pembayaran FROM payment ORDER BY metode_pembayaran");
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -99,9 +150,85 @@ $payments = fetchAll("
                 </div>
             <?php endif; ?>
 
+            <!-- Filter Card -->
+            <div class="card" style="margin-bottom: 20px;">
+                <div class="card-body">
+                    <form method="GET" action="">
+                        <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                            <div class="form-group" style="margin: 0;">
+                                <label for="search" style="margin-bottom: 5px;">Cari Payment</label>
+                                <input 
+                                    type="text" 
+                                    id="search"
+                                    name="search" 
+                                    class="form-control" 
+                                    placeholder="Nama, email, no HP, ID payment, atau ID booking"
+                                    value="<?php echo htmlspecialchars($search); ?>"
+                                >
+                            </div>
+                            <div class="form-group" style="margin: 0;">
+                                <label for="status" style="margin-bottom: 5px;">Status Payment</label>
+                                <select name="status" id="status" class="form-control">
+                                    <option value="">Semua Status</option>
+                                    <option value="pending" <?php echo ($filter_status === 'pending') ? 'selected' : ''; ?>>Pending</option>
+                                    <option value="success" <?php echo ($filter_status === 'success') ? 'selected' : ''; ?>>Lunas</option>
+                                    <option value="cancelled" <?php echo ($filter_status === 'cancelled') ? 'selected' : ''; ?>>Cancelled</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="margin: 0;">
+                                <label for="metode" style="margin-bottom: 5px;">Metode Pembayaran</label>
+                                <select name="metode" id="metode" class="form-control">
+                                    <option value="">Semua Metode</option>
+                                    <?php foreach ($metode_list as $metode): ?>
+                                        <option value="<?php echo htmlspecialchars($metode['metode_pembayaran']); ?>"
+                                            <?php echo ($filter_metode === $metode['metode_pembayaran']) ? 'selected' : ''; ?>>
+                                            <?php echo htmlspecialchars($metode['metode_pembayaran']); ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 15px; align-items: end;">
+                            <div class="form-group" style="margin: 0;">
+                                <label for="start_date" style="margin-bottom: 5px;">Tanggal Dari</label>
+                                <input 
+                                    type="date" 
+                                    id="start_date"
+                                    name="start_date" 
+                                    class="form-control" 
+                                    value="<?php echo htmlspecialchars($start_date); ?>"
+                                >
+                            </div>
+                            <div class="form-group" style="margin: 0;">
+                                <label for="end_date" style="margin-bottom: 5px;">Tanggal Sampai</label>
+                                <input 
+                                    type="date" 
+                                    id="end_date"
+                                    name="end_date" 
+                                    class="form-control" 
+                                    value="<?php echo htmlspecialchars($end_date); ?>"
+                                >
+                            </div>
+                            <div class="d-flex gap-10">
+                                <button type="submit" class="btn btn-primary">🔍 Filter</button>
+                                <?php if (!empty($search) || !empty($filter_status) || !empty($filter_metode) || !empty($start_date) || !empty($end_date)): ?>
+                                    <a href="index.php" class="btn btn-secondary">✕ Reset</a>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
             <div class="card">
                 <div class="card-header">
-                    <h3>Daftar Payment</h3>
+                    <h3>Daftar Payment
+                        <?php if (!empty($search) || !empty($filter_status) || !empty($filter_metode) || !empty($start_date) || !empty($end_date)): ?>
+                            <span style="font-size: 14px; color: #9D4EDD; font-weight: normal;">
+                                (<?php echo count($payments); ?> hasil)
+                            </span>
+                        <?php endif; ?>
+                    </h3>
                 </div>
                 <div class="card-body">
                     <div class="table-container">
@@ -122,7 +249,13 @@ $payments = fetchAll("
                             <tbody>
                                 <?php if (empty($payments)): ?>
                                     <tr>
-                                        <td colspan="9" class="text-center">Belum ada data payment</td>
+                                        <td colspan="9" class="text-center">
+                                            <?php if (!empty($search)): ?>
+                                                Tidak ada hasil untuk pencarian "<?php echo htmlspecialchars($search); ?>"
+                                            <?php else: ?>
+                                                Belum ada data payment
+                                            <?php endif; ?>
+                                        </td>
                                     </tr>
                                 <?php else: ?>
                                     <?php foreach ($payments as $payment): ?>

@@ -1,7 +1,7 @@
 <?php
 /**
  * List Lapangan
- * Admin Panel - Master Data Lapangan
+ * Admin Panel - Master Data Lapangan dengan Pencarian dan Filter
  */
 
 require_once '../auth.php';
@@ -9,6 +9,10 @@ require_once '../db.php';
 
 $success = $_GET['success'] ?? '';
 $error = $_GET['error'] ?? '';
+
+// Handle Search and Filter
+$search = trim($_GET['search'] ?? '');
+$filter_status = $_GET['status'] ?? '';
 
 // Handle Delete
 if (isset($_GET['delete'])) {
@@ -32,8 +36,29 @@ if (isset($_GET['delete'])) {
     exit;
 }
 
+// Build query with search and filter
+$sql = "SELECT * FROM lapangan WHERE 1=1";
+$params = [];
+
+// Add search condition
+if (!empty($search)) {
+    $sql .= " AND (nama_lapangan LIKE ? OR jenis_lapangan LIKE ? OR fasilitas LIKE ?)";
+    $search_param = "%$search%";
+    $params[] = $search_param;
+    $params[] = $search_param;
+    $params[] = $search_param;
+}
+
+// Add status filter
+if ($filter_status !== '') {
+    $sql .= " AND is_active = ?";
+    $params[] = intval($filter_status);
+}
+
+$sql .= " ORDER BY lapangan_id DESC";
+
 // Fetch all lapangan
-$lapangan_list = fetchAll("SELECT * FROM lapangan ORDER BY lapangan_id DESC");
+$lapangan_list = fetchAll($sql, $params);
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -83,9 +108,48 @@ $lapangan_list = fetchAll("SELECT * FROM lapangan ORDER BY lapangan_id DESC");
                 </div>
             <?php endif; ?>
 
+            <!-- Filter Card -->
+            <div class="card" style="margin-bottom: 20px;">
+                <div class="card-body">
+                    <form method="GET" action="" style="display: grid; grid-template-columns: 2fr 1fr auto; gap: 15px; align-items: end;">
+                        <div class="form-group" style="margin: 0;">
+                            <label for="search" style="margin-bottom: 5px;">Cari Lapangan</label>
+                            <input 
+                                type="text" 
+                                id="search"
+                                name="search" 
+                                class="form-control" 
+                                placeholder="Nama, jenis, atau fasilitas"
+                                value="<?php echo htmlspecialchars($search); ?>"
+                            >
+                        </div>
+                        <div class="form-group" style="margin: 0;">
+                            <label for="status" style="margin-bottom: 5px;">Status</label>
+                            <select name="status" id="status" class="form-control">
+                                <option value="">Semua Status</option>
+                                <option value="1" <?php echo ($filter_status === '1') ? 'selected' : ''; ?>>Aktif</option>
+                                <option value="0" <?php echo ($filter_status === '0') ? 'selected' : ''; ?>>Tidak Aktif</option>
+                            </select>
+                        </div>
+                        <div class="d-flex gap-10">
+                            <button type="submit" class="btn btn-primary">🔍 Filter</button>
+                            <?php if (!empty($search) || $filter_status !== ''): ?>
+                                <a href="index.php" class="btn btn-secondary">✕ Reset</a>
+                            <?php endif; ?>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
             <div class="card">
                 <div class="card-header d-flex justify-between align-center">
-                    <h3>Daftar Lapangan</h3>
+                    <h3>Daftar Lapangan
+                        <?php if (!empty($search) || $filter_status !== ''): ?>
+                            <span style="font-size: 14px; color: #9D4EDD; font-weight: normal;">
+                                (<?php echo count($lapangan_list); ?> hasil)
+                            </span>
+                        <?php endif; ?>
+                    </h3>
                     <a href="create.php" class="btn btn-primary">+ Tambah Lapangan</a>
                 </div>
                 <div class="card-body">
@@ -104,7 +168,13 @@ $lapangan_list = fetchAll("SELECT * FROM lapangan ORDER BY lapangan_id DESC");
                             <tbody>
                                 <?php if (empty($lapangan_list)): ?>
                                     <tr>
-                                        <td colspan="6" class="text-center">Belum ada data lapangan</td>
+                                        <td colspan="6" class="text-center">
+                                            <?php if (!empty($search)): ?>
+                                                Tidak ada hasil untuk pencarian "<?php echo htmlspecialchars($search); ?>"
+                                            <?php else: ?>
+                                                Belum ada data lapangan
+                                            <?php endif; ?>
+                                        </td>
                                     </tr>
                                 <?php else: ?>
                                     <?php foreach ($lapangan_list as $lap): ?>
