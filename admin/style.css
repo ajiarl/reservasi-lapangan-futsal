@@ -166,6 +166,15 @@ ul {
     background: #34495e;
 }
 
+.btn-secondary {
+    background: #bdc3c7;
+    color: #2c3e50;
+}
+
+.btn-secondary:hover {
+    background: #aeb6bf;
+}
+
 .btn-danger {
     background: #e74c3c;
     color: #fff;
@@ -280,4 +289,37 @@ table tbody tr:hover {
 
 .login-card .btn {
     width: 100%;
+}
+
+/* Booking Details Layout */
+.info-cards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.info-card {
+    flex: 1 1 calc(33.333% - 15px); /* 3 kolom */
+    background: #fafafa;
+    border: 1px solid #eee;
+    padding: 12px 15px;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.info-card .label {
+    font-size: 13px;
+    color: #777;
+    margin-bottom: 5px;
+}
+
+.info-card .value {
+    font-size: 15px;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.total-harga {
+    font-size: 18px;
+    font-weight: 700;
 }

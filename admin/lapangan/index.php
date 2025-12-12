@@ -54,7 +54,7 @@ require_once '../includes/header.php';
         <div style="display: flex; gap: 10px;">
             <button type="submit" class="btn btn-primary">Filter</button>
             <?php if ($search || $status !== ''): ?>
-                <a href="index.php" class="btn">Reset</a>
+                <a href="index.php" class="btn btn-secondary">Reset</a>
             <?php endif; ?>
         </div>
     </form>

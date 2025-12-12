@@ -26,26 +26,47 @@ require_once '../includes/header.php';
 
 <div class="card">
     <h3 style="margin-bottom: 20px;">Form Tambah Lapangan</h3>
-    <form method="POST" style="max-width: 600px;">
+    <form method="POST">
         <div class="form-group">
-            <label>Nama Lapangan *</label>
-            <input type="text" name="nama_lapangan" class="form-control" required>
+            <label for="nama_lapangan">Nama Lapangan *</label>
+            <input type="text" 
+                id="nama_lapangan" 
+                name="nama_lapangan" 
+                class="form-control" 
+                placeholder="Nama lapangan..." 
+                required>
         </div>
+
         
         <div class="form-group">
-            <label>Jenis Lapangan *</label>
-            <input type="text" name="jenis_lapangan" class="form-control" placeholder="Contoh: Futsal Vinyl" required>
+            <label for="jenis_lapangan">Jenis Lapangan *</label>
+            <input 
+                type="text" 
+                id="jenis_lapangan" 
+                name="jenis_lapangan" 
+                class="form-control" 
+                placeholder="Contoh: Futsal Vinyl" 
+                required
+            >
         </div>
-        
+
         <div class="form-group">
-            <label>Fasilitas *</label>
-            <textarea name="fasilitas" class="form-control" rows="3" placeholder="Contoh: Lighting, Toilet, Kantin" required></textarea>
+            <label for="fasilitas">Fasilitas *</label>
+            <textarea 
+                id="fasilitas" 
+                name="fasilitas" 
+                class="form-control" 
+                rows="3" 
+                placeholder="Contoh: Lighting, Toilet, Kantin" 
+                required
+            ></textarea>
         </div>
-        
-        <div style="display: flex; gap: 10px;">
-            <button type="submit" class="btn">Simpan</button>
+
+        <div class="form-actions" style="display: flex; gap: 10px;">
+            <button type="submit" class="btn btn-primary">Simpan</button>
             <a href="index.php" class="btn btn-secondary">Batal</a>
         </div>
+
     </form>
 </div>
 
