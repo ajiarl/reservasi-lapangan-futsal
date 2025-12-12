@@ -35,25 +35,26 @@ $lapangan = fetchAll($sql, $params);
 require_once '../includes/header.php';
 ?>
 
+
 <!-- Filter -->
 <div class="card">
-    <form method="GET" style="display: grid; grid-template-columns: 2fr 1fr auto; gap: 15px; align-items: end;">
+    <form method="GET" style="display: grid; grid-template-columns: 1fr 200px auto; gap: 15px; align-items: end;">
         <div class="form-group" style="margin: 0;">
             <label>Cari Lapangan</label>
-            <input type="text" name="search" placeholder="Nama atau jenis lapangan" value="<?= htmlspecialchars($search) ?>">
+            <input type="text" name="search" class="form-control" placeholder="Nama atau jenis lapangan" value="<?= htmlspecialchars($search) ?>">
         </div>
         <div class="form-group" style="margin: 0;">
             <label>Status</label>
-            <select name="status">
+            <select name="status" class="form-control">
                 <option value="">Semua Status</option>
                 <option value="1" <?= $status === '1' ? 'selected' : '' ?>>Aktif</option>
                 <option value="0" <?= $status === '0' ? 'selected' : '' ?>>Nonaktif</option>
             </select>
         </div>
         <div style="display: flex; gap: 10px;">
-            <button type="submit" class="btn">Filter</button>
+            <button type="submit" class="btn btn-primary">Filter</button>
             <?php if ($search || $status !== ''): ?>
-                <a href="index.php" class="btn btn-secondary">Reset</a>
+                <a href="index.php" class="btn">Reset</a>
             <?php endif; ?>
         </div>
     </form>
@@ -63,7 +64,7 @@ require_once '../includes/header.php';
 <div class="card">
     <div class="d-flex justify-between" style="margin-bottom: 15px;">
         <h3>Daftar Lapangan</h3>
-        <a href="tambah_lapangan.php" class="btn">+ Tambah</a>
+        <a href="tambah_lapangan.php" class="btn btn-primary">Tambah</a>
     </div>
     <table>
         <thead>

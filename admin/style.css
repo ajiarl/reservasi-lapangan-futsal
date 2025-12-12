@@ -98,6 +98,10 @@ ul {
     margin-bottom: 20px;
 }
 
+.card .d-flex {
+    align-items: center;
+}
+
 .card h3 {
     color: #2c3e50;
     margin-bottom: 15px;
