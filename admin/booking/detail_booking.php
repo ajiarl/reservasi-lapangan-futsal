@@ -33,8 +33,20 @@ $details = fetchAll("SELECT bd.*, j.hari, j.jam_mulai_slot, j.jam_selesai_slot, 
 // Payment data
 $payment = fetchOne("SELECT * FROM payment WHERE Bookings_booking_id=?", [$id]);
 
+$statusBooking = $booking['status_booking'] ?: 'Pending';
+
+$class = match ($statusBooking) {
+    'Pending'      => 'warning',
+    'Berlangsung'  => 'primary',
+    'Selesai'      => 'success',
+    'Batal'        => 'danger',
+    default        => 'secondary'
+};
+
 require_once '../includes/header.php';
 ?>
+
+
 
 <div class="card">
     <h3>Informasi Booking</h3>
@@ -81,9 +93,10 @@ require_once '../includes/header.php';
         <div class="info-card">
             <div class="label">Status</div>
             <div class="value badge badge-<?= $class ?>">
-                <?= ucfirst($booking['status_booking']) ?>
+                <?= htmlspecialchars($statusBooking) ?>
             </div>
         </div>
+
 
     </div>
 </div>
@@ -129,10 +142,21 @@ require_once '../includes/header.php';
         <p><strong>Metode:</strong> <?= htmlspecialchars($payment['metode_pembayaran']) ?></p>
         <p><strong>Status:</strong> 
             <?php
-            $badge = ['pending'=>'warning','success'=>'success','cancelled'=>'danger'];
+            $statusPay = $payment['status_payment'] ?: 'Pending';
+
+            $paymentClass = match ($statusPay) {
+                'Pending' => 'warning',
+                'DP' => 'info',
+                'Lunas' => 'success',
+                default => 'secondary'
+            };
+
             $class = $badge[$payment['status_payment']] ?? 'info';
             ?>
-            <span class="badge badge-<?= $class ?>"><?= ucfirst($payment['status_payment']) ?></span>
+            <span class="badge badge-<?= $paymentClass ?>">
+                <?= htmlspecialchars($statusPay) ?>
+            </span>
+
         </p>
         <?php if ($payment['tgl_pembayaran']): ?>
             <p><strong>Tanggal Bayar:</strong> <?= date('d F Y H:i', strtotime($payment['tgl_pembayaran'])) ?></p>
@@ -145,5 +169,10 @@ require_once '../includes/header.php';
 <div style="margin-top:20px;">
     <a href="index.php" class="btn btn-secondary">← Kembali</a>
 </div>
+
+<pre>
+<?php print_r($booking); ?>
+</pre>
+
 
 <?php require_once '../includes/footer.php'; ?>

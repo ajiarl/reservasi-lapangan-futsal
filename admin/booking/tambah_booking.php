@@ -33,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     try {
         // Insert booking
-        q("INSERT INTO bookings (users_user_id, tgl_booking, total_harga, status_booking) VALUES (?, ?, 0, 'pending')", 
+        q("INSERT INTO bookings (users_user_id, tgl_booking, total_harga, status_booking) VALUES (?, ?, 0, 'Pending')", 
             [$user_id, $tgl_booking]);
         
         $booking_id = $conn->insert_id;
@@ -47,6 +47,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             q("INSERT INTO booking_detail (booking_id, jadwal_id, jam_mulai, jam_selesai, harga) VALUES (?, ?, ?, ?, ?)", 
                 [$booking_id, $jadwal_id, $jam_mulai[$i], $jam_selesai[$i], $jadwal['harga_perjam_slot']]);
         }
+
+        // ============================
+        // INSERT PAYMENT (AUTO PENDING)
+        // ============================
+        q(
+            "INSERT INTO payment 
+            (Bookings_booking_id, jumlah_bayar, metode_pembayaran, status_payment, tgl_pembayaran) 
+            VALUES (?, 0, 'CASH', 'Pending', NOW())",
+            [$booking_id]
+        );
+
         
         $conn->commit();
         header('Location: index.php?success=Booking berhasil ditambahkan');
