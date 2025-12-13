@@ -34,8 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $sql = "UPDATE payment SET jumlah_bayar=?, metode_pembayaran=?, status_payment=?, tgl_pembayaran=NOW() WHERE payment_id=?";
         $result = q($sql, [$jumlah, $metode, $status, $id]);
         
-        // Update booking status ke Berlangsung
-        q("UPDATE bookings SET status_booking='Berlangsung' WHERE booking_id=?", [$payment['Bookings_booking_id']]);
+
     } else {
         $sql = "UPDATE payment SET jumlah_bayar=?, metode_pembayaran=?, status_payment=? WHERE payment_id=?";
         $result = q($sql, [$jumlah, $metode, $status, $id]);
