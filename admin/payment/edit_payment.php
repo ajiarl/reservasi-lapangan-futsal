@@ -29,13 +29,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $metode = trim($_POST['metode_pembayaran']);
     $status = $_POST['status_payment'];
     
-    // Update tgl_pembayaran jika status berubah ke success
-    if ($status == 'success' && $payment['status_payment'] != 'success') {
+    // Update tgl_pembayaran jika status berubah ke Lunas
+    if ($status == 'Lunas' && $payment['status_payment'] != 'Lunas') {
         $sql = "UPDATE payment SET jumlah_bayar=?, metode_pembayaran=?, status_payment=?, tgl_pembayaran=NOW() WHERE payment_id=?";
         $result = q($sql, [$jumlah, $metode, $status, $id]);
         
-        // Update booking status
-        q("UPDATE bookings SET status_booking='confirmed' WHERE booking_id=?", [$payment['Bookings_booking_id']]);
+        // Update booking status ke Berlangsung
+        q("UPDATE bookings SET status_booking='Berlangsung' WHERE booking_id=?", [$payment['Bookings_booking_id']]);
     } else {
         $sql = "UPDATE payment SET jumlah_bayar=?, metode_pembayaran=?, status_payment=? WHERE payment_id=?";
         $result = q($sql, [$jumlah, $metode, $status, $id]);
@@ -69,9 +69,8 @@ require_once '../includes/header.php';
         <div class="form-group">
             <label>Metode Pembayaran *</label>
             <select name="metode_pembayaran" class="form-control" required>
-                <option value="Transfer Bank" <?= $payment['metode_pembayaran']=='Transfer Bank'?'selected':'' ?>>Transfer Bank</option>
-                <option value="Cash" <?= $payment['metode_pembayaran']=='Cash'?'selected':'' ?>>Cash</option>
-                <option value="E-Wallet" <?= $payment['metode_pembayaran']=='E-Wallet'?'selected':'' ?>>E-Wallet</option>
+                <option value="CASH" <?= $payment['metode_pembayaran']=='CASH'?'selected':'' ?>>Cash</option>
+                <option value="TRANSFER" <?= $payment['metode_pembayaran']=='TRANSFER'?'selected':'' ?>>Transfer Bank</option>
                 <option value="QRIS" <?= $payment['metode_pembayaran']=='QRIS'?'selected':'' ?>>QRIS</option>
             </select>
         </div>
@@ -79,14 +78,14 @@ require_once '../includes/header.php';
         <div class="form-group">
             <label>Status *</label>
             <select name="status_payment" class="form-control" required>
-                <option value="pending" <?= $payment['status_payment']=='pending'?'selected':'' ?>>Pending</option>
-                <option value="success" <?= $payment['status_payment']=='success'?'selected':'' ?>>Lunas</option>
-                <option value="cancelled" <?= $payment['status_payment']=='cancelled'?'selected':'' ?>>Cancelled</option>
+                <option value="Pending" <?= $payment['status_payment']=='Pending'?'selected':'' ?>>Pending</option>
+                <option value="DP" <?= $payment['status_payment']=='DP'?'selected':'' ?>>DP</option>
+                <option value="Lunas" <?= $payment['status_payment']=='Lunas'?'selected':'' ?>>Lunas</option>
             </select>
         </div>
         
         <div style="display:flex; gap:10px;">
-            <button type="submit" class="btn">Update</button>
+            <button type="submit" class="btn btn-primary">Update</button>
             <a href="index.php" class="btn btn-secondary">Batal</a>
         </div>
     </form>

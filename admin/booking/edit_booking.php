@@ -24,6 +24,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $sql = "UPDATE bookings SET tgl_booking=?, status_booking=? WHERE booking_id=?";
     
     if (q($sql, [$tgl_booking, $status, $id])) {
+        // Sinkronisasi: Jika booking Selesai → payment Lunas
+        if ($status == 'Selesai') {
+            q("UPDATE payment 
+               SET status_payment='Lunas', 
+                   tgl_pembayaran=COALESCE(tgl_pembayaran, NOW()) 
+               WHERE Bookings_booking_id=?", [$id]);
+        }
+        
         header('Location: index.php?success=Booking berhasil diupdate');
         exit;
     }
@@ -51,10 +59,10 @@ require_once '../includes/header.php';
         <div class="form-group">
             <label>Status Booking *</label>
             <select name="status_booking" class="form-control" required>
-                <option value="pending" <?= $booking['status_booking']=='pending' ? 'selected' : '' ?>>Pending</option>
-                <option value="confirmed" <?= $booking['status_booking']=='confirmed' ? 'selected' : '' ?>>Confirmed</option>
-                <option value="completed" <?= $booking['status_booking']=='completed' ? 'selected' : '' ?>>Completed</option>
-                <option value="cancelled" <?= $booking['status_booking']=='cancelled' ? 'selected' : '' ?>>Cancelled</option>
+                <option value="Pending" <?= ($booking['status_booking']=='Pending' || !$booking['status_booking']) ? 'selected' : '' ?>>Pending</option>
+                <option value="Berlangsung" <?= $booking['status_booking']=='Berlangsung' ? 'selected' : '' ?>>Berlangsung</option>
+                <option value="Selesai" <?= $booking['status_booking']=='Selesai' ? 'selected' : '' ?>>Selesai</option>
+                <option value="Batal" <?= $booking['status_booking']=='Batal' ? 'selected' : '' ?>>Batal</option>
             </select>
         </div>
         
@@ -65,7 +73,7 @@ require_once '../includes/header.php';
         </div>
         
         <div style="display:flex; gap:10px;">
-            <button type="submit" class="btn">Update</button>
+            <button type="submit" class="btn btn-primary">Update</button>
             <a href="index.php" class="btn btn-secondary">Batal</a>
         </div>
     </form>

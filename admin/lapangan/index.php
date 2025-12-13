@@ -93,7 +93,7 @@ require_once '../includes/header.php';
                             </span>
                         </td>
                         <td>
-                            <a href="edit_lapangan.php?id=<?= $l['lapangan_id'] ?>" class="btn btn-sm">Edit</a>
+                            <a href="edit_lapangan.php?id=<?= $l['lapangan_id'] ?>" class="btn btn-edit btn-sm">Edit</a>
                             <a href="hapus_lapangan.php?id=<?= $l['lapangan_id'] ?>" 
                                class="btn btn-sm btn-danger" 
                                onclick="return confirm('Yakin hapus?')">Hapus</a>

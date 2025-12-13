@@ -18,11 +18,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $booking_id = intval($_POST['booking_id']);
     $jumlah = floatval($_POST['jumlah_bayar']);
     $metode = trim($_POST['metode_pembayaran']);
+    $status = $_POST['status_payment'];
     
-    $sql = "INSERT INTO payment (Bookings_booking_id, jumlah_bayar, metode_pembayaran, status_payment, tgl_pembayaran) 
-            VALUES (?, ?, ?, 'pending', NULL)";
+    // Logika tgl_pembayaran:
+    // - Jika jumlah > 0 (ada pembayaran) → set NOW()
+    // - Jika jumlah = 0 (pending belum bayar) → NULL
+    $tgl_bayar = ($jumlah > 0) ? 'NOW()' : 'NULL';
     
-    if (q($sql, [$booking_id, $jumlah, $metode])) {
+    if ($jumlah > 0) {
+        $sql = "INSERT INTO payment (Bookings_booking_id, jumlah_bayar, metode_pembayaran, status_payment, tgl_pembayaran) 
+                VALUES (?, ?, ?, ?, NOW())";
+        $params = [$booking_id, $jumlah, $metode, $status];
+    } else {
+        $sql = "INSERT INTO payment (Bookings_booking_id, jumlah_bayar, metode_pembayaran, status_payment, tgl_pembayaran) 
+                VALUES (?, ?, ?, ?, NULL)";
+        $params = [$booking_id, $jumlah, $metode, $status];
+    }
+    
+    if (q($sql, $params)) {
+        // Update booking status ke Berlangsung jika Lunas
+        if ($status == 'Lunas') {
+            q("UPDATE bookings SET status_booking='Berlangsung' WHERE booking_id=?", [$booking_id]);
+        }
+        
         header('Location: index.php?success=Payment berhasil ditambahkan');
         exit;
     }
@@ -43,7 +61,7 @@ require_once '../includes/header.php';
         </div>
         <a href="index.php" class="btn btn-secondary">Kembali</a>
     <?php else: ?>
-        <form method="POST" style="max-width:600px;">
+        <form method="POST" style="max-width:800px;">
             <div class="form-group">
                 <label>Booking *</label>
                 <select name="booking_id" class="form-control" id="booking" required>
@@ -58,22 +76,37 @@ require_once '../includes/header.php';
             
             <div class="form-group">
                 <label>Jumlah Bayar *</label>
-                <input type="number" name="jumlah_bayar" id="jumlah" class="form-control" step="0.01" required>
+                <input type="number" name="jumlah_bayar" id="jumlah" class="form-control" step="0.01" min="0" required>
+                <small style="color:#666;">Masukkan jumlah yang dibayarkan customer (masukkan 0 jika belum bayar)</small>
             </div>
             
             <div class="form-group">
                 <label>Metode Pembayaran *</label>
                 <select name="metode_pembayaran" class="form-control" required>
                     <option value="">Pilih Metode</option>
-                    <option value="Transfer Bank">Transfer Bank</option>
-                    <option value="Cash">Cash</option>
-                    <option value="E-Wallet">E-Wallet</option>
+                    <option value="CASH">Cash</option>
+                    <option value="TRANSFER">Transfer Bank</option>
                     <option value="QRIS">QRIS</option>
                 </select>
             </div>
             
+            <div class="form-group">
+                <label>Status Payment *</label>
+                <select name="status_payment" class="form-control" required>
+                    <option value="">Pilih Status</option>
+                    <option value="Pending">Pending (Belum Bayar)</option>
+                    <option value="DP">DP (Down Payment)</option>
+                    <option value="Lunas">Lunas (Sudah Bayar Penuh)</option>
+                </select>
+                <small style="color:#666;">
+                    <strong>Pending:</strong> Belum ada pembayaran (jumlah Rp 0)<br>
+                    <strong>DP:</strong> Bayar sebagian (contoh: Rp 100.000 dari Rp 500.000)<br>
+                    <strong>Lunas:</strong> Bayar penuh sesuai total booking
+                </small>
+            </div>
+            
             <div style="display:flex; gap:10px;">
-                <button type="submit" class="btn">Simpan</button>
+                <button type="submit" class="btn btn-primary">Simpan</button>
                 <a href="index.php" class="btn btn-secondary">Batal</a>
             </div>
         </form>

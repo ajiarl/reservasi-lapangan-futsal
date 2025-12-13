@@ -90,7 +90,7 @@ require_once '../includes/header.php';
         </div>
         
         <div style="display:flex; gap:10px;">
-            <button type="submit" class="btn">Update</button>
+            <button type="submit" class="btn btn-primary">Update</button>
             <a href="index.php" class="btn btn-secondary">Batal</a>
         </div>
     </form>

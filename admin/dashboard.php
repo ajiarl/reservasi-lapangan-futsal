@@ -9,8 +9,8 @@ $base_url = '.';
 $stats = [
     'users' => fetchOne("SELECT COUNT(*) as c FROM users")['c'],
     'lapangan' => fetchOne("SELECT COUNT(*) as c FROM lapangan WHERE is_active=1")['c'],
-    'bookings' => fetchOne("SELECT COUNT(*) as c FROM bookings WHERE status_booking IN ('pending','confirmed')")['c'],
-    'revenue' => fetchOne("SELECT SUM(jumlah_bayar) as c FROM payment WHERE status_payment='success'")['c'] ?? 0
+    'bookings' => fetchOne("SELECT COUNT(*) as c FROM bookings WHERE status_booking IN ('Pending','Berlangsung')")['c'],
+    'revenue' => fetchOne("SELECT COALESCE(SUM(jumlah_bayar), 0) as c FROM payment WHERE status_payment='Lunas'")['c']
 ];
 
 // Recent bookings

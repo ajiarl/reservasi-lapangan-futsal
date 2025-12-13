@@ -90,13 +90,13 @@ require_once '../includes/header.php';
         <div class="form-group">
             <label>Role *</label>
             <select name="role" class="form-control" required>
-                <option value="pelanggan" <?= $user['role']=='pelanggan' ? 'selected' : '' ?>>Pelanggan</option>
+                <option value="customer" <?= $user['role']=='customer' ? 'selected' : '' ?>>Customer</option>
                 <option value="admin" <?= $user['role']=='admin' ? 'selected' : '' ?>>Admin</option>
             </select>
         </div>
         
         <div style="display:flex; gap:10px;">
-            <button type="submit" class="btn">Update</button>
+            <button type="submit" class="btn btn-primary">Update</button>
             <a href="index.php" class="btn btn-secondary">Batal</a>
         </div>
     </form>

@@ -46,23 +46,23 @@ require_once '../includes/header.php';
             <label>Role</label>
             <select name="role" class="form-control">
                 <option value="">Semua</option>
-                <option value="pelanggan" <?= $role=='pelanggan' ? 'selected' : '' ?>>Pelanggan</option>
+                <option value="customer" <?= $role=='customer' ? 'selected' : '' ?>>Customer</option>
                 <option value="admin" <?= $role=='admin' ? 'selected' : '' ?>>Admin</option>
             </select>
         </div>
         <div style="display:flex; gap:10px;">
-            <button type="submit" class="btn">Filter</button>
+            <button type="submit" class="btn btn-primary">Filter</button>
             <?php if ($search || $role): ?>
-                <a href="index.php" class="btn">Reset</a>
+                <a href="index.php" class="btn btn-secondary">Reset</a>
             <?php endif; ?>
         </div>
     </form>
 </div>
 
 <div class="card">
-    <div class="d-flex justify-between">
+    <div class="d-flex justify-between" style="margin-bottom: 15px;">
         <h3>Daftar User</h3>
-        <a href="tambah_user.php" class="btn">Tambah</a>
+        <a href="tambah_user.php" class="btn btn-primary">Tambah</a>
     </div>
     <table>
         <thead>
@@ -89,12 +89,12 @@ require_once '../includes/header.php';
                         <td><?= htmlspecialchars($u['alamat'] ?: '-') ?></td>
                         <td>
                             <span class="badge badge-<?= $u['role']=='admin' ? 'danger' : 'success' ?>">
-                                <?= ucfirst($u['role']) ?>
+                                <?= $u['role']=='admin' ? 'Admin' : 'Customer' ?>
                             </span>
                         </td>
                         <td>
                             <?php if ($u['user_id'] != $admin_id): ?>
-                                <a href="edit_user.php?id=<?= $u['user_id'] ?>" class="btn btn-sm">Edit</a>
+                                <a href="edit_user.php?id=<?= $u['user_id'] ?>" class="btn btn-edit btn-sm">Edit</a>
                                 <a href="hapus_user.php?id=<?= $u['user_id'] ?>" class="btn btn-sm btn-danger" onclick="return confirm('Yakin hapus?')">Hapus</a>
                             <?php else: ?>
                                 <span style="color:#999; font-size:13px;">Akun Aktif</span>

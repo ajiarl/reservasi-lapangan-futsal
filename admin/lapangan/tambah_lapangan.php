@@ -26,7 +26,7 @@ require_once '../includes/header.php';
 
 <div class="card">
     <h3 style="margin-bottom: 20px;">Form Tambah Lapangan</h3>
-    <form method="POST">
+    <form method="POST" style="max-width: 800px;">
         <div class="form-group">
             <label for="nama_lapangan">Nama Lapangan *</label>
             <input type="text" 

@@ -8,11 +8,11 @@ $base_url = '..';
 // Konfirmasi Lunas
 if (isset($_GET['confirm'])) {
     $id = intval($_GET['confirm']);
-    q("UPDATE payment SET status_payment='success', tgl_pembayaran=NOW() WHERE payment_id=?", [$id]);
+    q("UPDATE payment SET status_payment='Lunas', tgl_pembayaran=NOW() WHERE payment_id=?", [$id]);
     
     $payment = fetchOne("SELECT Bookings_booking_id FROM payment WHERE payment_id=?", [$id]);
     if ($payment) {
-        q("UPDATE bookings SET status_booking='confirmed' WHERE booking_id=?", [$payment['Bookings_booking_id']]);
+        q("UPDATE bookings SET status_booking='Berlangsung' WHERE booking_id=?", [$payment['Bookings_booking_id']]);
     }
     
     header('Location: index.php?success=Payment berhasil dikonfirmasi');
@@ -46,8 +46,9 @@ $sql .= " ORDER BY p.payment_id DESC";
 $payments = fetchAll($sql, $params);
 
 // Stats
-$pending = fetchOne("SELECT SUM(jumlah_bayar) as t FROM payment WHERE status_payment='pending'")['t'] ?? 0;
-$success = fetchOne("SELECT SUM(jumlah_bayar) as t FROM payment WHERE status_payment='success'")['t'] ?? 0;
+$pending = fetchOne("SELECT COUNT(*) as t FROM payment WHERE status_payment='Pending'")['t'];
+$dp = fetchOne("SELECT COALESCE(SUM(jumlah_bayar), 0) as t FROM payment WHERE status_payment='DP'")['t'];
+$lunas = fetchOne("SELECT COALESCE(SUM(jumlah_bayar), 0) as t FROM payment WHERE status_payment='Lunas'")['t'];
 
 require_once '../includes/header.php';
 ?>
@@ -62,13 +63,13 @@ require_once '../includes/header.php';
             <label>Status</label>
             <select name="status" class="form-control">
                 <option value="">Semua</option>
-                <option value="pending" <?= $status=='pending' ? 'selected' : '' ?>>Pending</option>
-                <option value="success" <?= $status=='success' ? 'selected' : '' ?>>Lunas</option>
-                <option value="cancelled" <?= $status=='cancelled' ? 'selected' : '' ?>>Cancelled</option>
+                <option value="Pending" <?= $status=='Pending' ? 'selected' : '' ?>>Pending</option>
+                <option value="DP" <?= $status=='DP' ? 'selected' : '' ?>>DP</option>
+                <option value="Lunas" <?= $status=='Lunas' ? 'selected' : '' ?>>Lunas</option>
             </select>
         </div>
         <div style="display:flex; gap:10px;">
-            <button type="submit" class="btn">Filter</button>
+            <button type="submit" class="btn btn-primary">Filter</button>
             <?php if ($search || $status): ?>
                 <a href="index.php" class="btn btn-secondary">Reset</a>
             <?php endif; ?>
@@ -77,23 +78,28 @@ require_once '../includes/header.php';
 </div>
 
 <!-- Stats -->
-<div style="display:grid; grid-template-columns:repeat(2,1fr); gap:20px; margin-bottom:20px;">
+<div style="display:grid; grid-template-columns:repeat(3,1fr); gap:20px; margin-bottom:20px;">
+    <div class="card" style="text-align:center;">
+        <div style="font-size:36px; margin-bottom:10px;">⏳</div>
+        <h2><?= $pending ?></h2>
+        <p>Jumlah Payment Pending</p>
+    </div>
     <div class="card" style="text-align:center;">
         <div style="font-size:36px; margin-bottom:10px;">💰</div>
-        <h2>Rp <?= number_format($pending, 0, ',', '.') ?></h2>
-        <p>Total Pending</p>
+        <h2>Rp <?= number_format($dp, 0, ',', '.') ?></h2>
+        <p>Total DP</p>
     </div>
     <div class="card" style="text-align:center;">
         <div style="font-size:36px; margin-bottom:10px;">✓</div>
-        <h2>Rp <?= number_format($success, 0, ',', '.') ?></h2>
+        <h2>Rp <?= number_format($lunas, 0, ',', '.') ?></h2>
         <p>Total Lunas</p>
     </div>
 </div>
 
 <div class="card">
-    <div class="d-flex justify-between">
+    <div class="d-flex justify-between" style="margin-bottom: 15px;">
         <h3>Daftar Payment</h3>
-        <a href="tambah_payment.php" class="btn">Tambah</a>
+        <a href="tambah_payment.php" class="btn btn-primary">Tambah</a>
     </div>
     <table>
         <thead>
@@ -118,18 +124,32 @@ require_once '../includes/header.php';
                         <td><a href="../booking/detail.php?id=<?= $p['Bookings_booking_id'] ?>" style="color:#333;">#<?= $p['Bookings_booking_id'] ?></a></td>
                         <td><?= htmlspecialchars($p['nama_pelanggan']) ?></td>
                         <td>Rp <?= number_format($p['jumlah_bayar'], 0, ',', '.') ?></td>
-                        <td><?= htmlspecialchars($p['metode_pembayaran']) ?></td>
                         <td>
-                            <span class="badge badge-<?= $p['status_payment']=='success'?'success':($p['status_payment']=='pending'?'warning':'danger') ?>">
-                                <?= $p['status_payment']=='success'?'Lunas':ucfirst($p['status_payment']) ?>
+                            <?php 
+                            $metode_display = [
+                                'CASH' => 'Cash',
+                                'TRANSFER' => 'Transfer',
+                                'QRIS' => 'QRIS'
+                            ];
+                            echo $metode_display[$p['metode_pembayaran']] ?? $p['metode_pembayaran'];
+                            ?>
+                        </td>
+                        <td>
+                            <?php
+                            $badge_class = [
+                                'Lunas' => 'success',
+                                'DP' => 'warning',
+                                'Pending' => 'danger'
+                            ];
+                            $class = $badge_class[$p['status_payment']] ?? 'secondary';
+                            ?>
+                            <span class="badge badge-<?= $class ?>">
+                                <?= $p['status_payment'] ?>
                             </span>
                         </td>
                         <td><?= $p['tgl_pembayaran'] ? date('d/m/Y H:i', strtotime($p['tgl_pembayaran'])) : '-' ?></td>
                         <td>
-                            <?php if ($p['status_payment'] == 'pending'): ?>
-                                <a href="index.php?confirm=<?= $p['payment_id'] ?>" class="btn btn-sm" onclick="return confirm('Konfirmasi lunas?')">✓ Lunas</a>
-                            <?php endif; ?>
-                            <a href="edit_payment.php?id=<?= $p['payment_id'] ?>" class="btn btn-sm">Edit</a>
+                            <a href="edit_payment.php?id=<?= $p['payment_id'] ?>" class="btn btn-edit btn-sm">Edit</a>
                             <a href="hapus_payment.php?id=<?= $p['payment_id'] ?>" class="btn btn-sm btn-danger" onclick="return confirm('Yakin hapus?')">Hapus</a>
                         </td>
                     </tr>

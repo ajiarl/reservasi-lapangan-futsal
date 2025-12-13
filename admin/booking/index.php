@@ -8,8 +8,8 @@ $base_url = '..';
 // Cancel
 if (isset($_GET['cancel'])) {
     $id = intval($_GET['cancel']);
-    q("UPDATE bookings SET status_booking='cancelled' WHERE booking_id=?", [$id]);
-    q("UPDATE payment SET status_payment='cancelled' WHERE Bookings_booking_id=?", [$id]);
+    q("UPDATE bookings SET status_booking='Batal' WHERE booking_id=?", [$id]);
+    q("UPDATE payment SET status_payment='Pending' WHERE Bookings_booking_id=?", [$id]);
     header('Location: index.php?success=Booking dibatalkan');
     exit;
 }
@@ -66,18 +66,18 @@ require_once '../includes/header.php';
             <input type="date" name="end_date" class="form-control" value="<?= htmlspecialchars($end) ?>">
         </div>
         <div style="display:flex; gap:10px;">
-            <button type="submit" class="btn">Filter</button>
+            <button type="submit" class="btn btn-primary">Filter</button>
             <?php if ($search || $start || $end): ?>
-                <a href="index.php" class="btn">Reset</a>
+                <a href="index.php" class="btn btn-secondary">Reset</a>
             <?php endif; ?>
         </div>
     </form>
 </div>
 
 <div class="card">
-    <div class="d-flex justify-between">
+    <div class="d-flex justify-between" style="margin-bottom: 15px;">
         <h3>Daftar Booking</h3>
-        <a href="tambah_booking.php" class="btn">Tambah</a>
+        <a href="tambah_booking.php" class="btn btn-primary">Tambah</a>
     </div>
     <table>
         <thead>
@@ -97,6 +97,19 @@ require_once '../includes/header.php';
                 <tr><td colspan="8" class="text-center">Tidak ada data</td></tr>
             <?php else: ?>
                 <?php foreach ($bookings as $b): ?>
+                    <?php
+                    // Konsistensi status - fallback jika null/kosong
+                    $status = $b['status_booking'] ?: 'Pending';
+                    
+                    // Mapping badge berdasarkan status VALID
+                    $badge_map = [
+                        'Pending' => 'warning',
+                        'Berlangsung' => 'info',
+                        'Selesai' => 'success',
+                        'Batal' => 'danger'
+                    ];
+                    $badge_class = $badge_map[$status] ?? 'warning';
+                    ?>
                     <tr>
                         <td>#<?= $b['booking_id'] ?></td>
                         <td><?= htmlspecialchars($b['nama_pelanggan']) ?></td>
@@ -105,15 +118,12 @@ require_once '../includes/header.php';
                         <td><?= $b['total_slot'] ?> slot</td>
                         <td>Rp <?= number_format($b['total_harga'], 0, ',', '.') ?></td>
                         <td>
-                            <?php
-                            $badge = ['pending'=>'warning','confirmed'=>'info','completed'=>'success','cancelled'=>'danger'];
-                            $class = $badge[$b['status_booking']] ?? 'info';
-                            ?>
-                            <span class="badge badge-<?= $class ?>"><?= ucfirst($b['status_booking']) ?></span>
+                            <span class="badge badge-<?= $badge_class ?>"><?= $status ?></span>
                         </td>
                         <td>
-                            <a href="detail_booking.php?id=<?= $b['booking_id'] ?>" class="btn btn-sm">Detail</a>
-                            <?php if (!in_array($b['status_booking'], ['cancelled','completed'])): ?>
+                            <a href="detail_booking.php?id=<?= $b['booking_id'] ?>" class="btn btn-detail btn-sm">Detail</a>
+                            <a href="edit_booking.php?id=<?= $b['booking_id'] ?>" class="btn btn-edit btn-sm">Edit</a>
+                            <?php if (!in_array($status, ['Batal', 'Selesai'])): ?>
                                 <a href="index.php?cancel=<?= $b['booking_id'] ?>" class="btn btn-sm btn-danger" onclick="return confirm('Yakin batalkan?')">Batalkan</a>
                             <?php endif; ?>
                         </td>

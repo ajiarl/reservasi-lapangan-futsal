@@ -23,36 +23,54 @@ if (!$booking) {
 }
 
 // Booking details (slots)
-$details = fetchAll("SELECT bd.*, j.hari, j.jam_mulai_slot, j.jam_selesai_slot, l.nama_lapangan, l.jenis_lapangan
+$details = fetchAll("SELECT bd.*, j.hari, j.jam_mulai_slot, j.jam_selesai_slot, j.harga_perjam_slot, l.nama_lapangan, l.jenis_lapangan
     FROM booking_detail bd
     JOIN jadwallapangan j ON bd.jadwal_id = j.jadwal_id
     JOIN lapangan l ON j.Lapangan_lapangan_id = l.lapangan_id
     WHERE bd.booking_id=?
-    ORDER BY j.hari, bd.jam_mulai", [$id]);
+    ORDER BY j.hari, j.jam_mulai_slot", [$id]);
 
 // Payment data
 $payment = fetchOne("SELECT * FROM payment WHERE Bookings_booking_id=?", [$id]);
 
+// Konsistensi status booking
 $statusBooking = $booking['status_booking'] ?: 'Pending';
+$badge_map = [
+    'Pending' => 'warning',
+    'Berlangsung' => 'info',
+    'Selesai' => 'success',
+    'Batal' => 'danger'
+];
+$badge_class = $badge_map[$statusBooking] ?? 'warning';
 
-$class = match ($statusBooking) {
-    'Pending'      => 'warning',
-    'Berlangsung'  => 'primary',
-    'Selesai'      => 'success',
-    'Batal'        => 'danger',
-    default        => 'secondary'
-};
+// ===== LOGIKA DISPLAY PAYMENT =====
+// Jika status Lunas, gunakan total_harga dari booking sebagai sumber kebenaran
+$jumlah_display = 0;
+if ($payment) {
+    $statusPay = $payment['status_payment'] ?: 'Pending';
+    
+    if ($statusPay === 'Lunas') {
+        $jumlah_display = $booking['total_harga'];
+    } else {
+        $jumlah_display = $payment['jumlah_bayar'];
+    }
+    
+    $payment_badge = [
+        'Pending' => 'warning',
+        'DP' => 'info',
+        'Lunas' => 'success'
+    ];
+    $pay_class = $payment_badge[$statusPay] ?? 'warning';
+}
+// ===== END LOGIKA DISPLAY =====
 
 require_once '../includes/header.php';
 ?>
-
-
 
 <div class="card">
     <h3>Informasi Booking</h3>
 
     <div class="info-cards">
-
         <div class="info-card">
             <div class="label">Booking ID</div>
             <div class="value">#<?= $booking['booking_id'] ?></div>
@@ -75,7 +93,7 @@ require_once '../includes/header.php';
 
         <div class="info-card">
             <div class="label">Alamat</div>
-            <div class="value"><?= htmlspecialchars($booking['alamat']) ?></div>
+            <div class="value"><?= htmlspecialchars($booking['alamat'] ?: '-') ?></div>
         </div>
 
         <div class="info-card">
@@ -86,23 +104,20 @@ require_once '../includes/header.php';
         <div class="info-card">
             <div class="label">Total</div>
             <div class="value total-harga">
-                Rp <?= number_format($booking['total_harga'],0,',','.') ?>
+                Rp <?= number_format($booking['total_harga'], 0, ',', '.') ?>
             </div>
         </div>
 
         <div class="info-card">
             <div class="label">Status</div>
-            <div class="value badge badge-<?= $class ?>">
-                <?= htmlspecialchars($statusBooking) ?>
+            <div class="value">
+                <span class="badge badge-<?= $badge_class ?>">
+                    <?= htmlspecialchars($statusBooking) ?>
+                </span>
             </div>
         </div>
-
-
     </div>
 </div>
-
-
-
 
 <div class="card">
     <h3>Detail Slot Booking</h3>
@@ -125,7 +140,7 @@ require_once '../includes/header.php';
                         <td><?= htmlspecialchars($d['nama_lapangan']) ?></td>
                         <td><?= htmlspecialchars($d['jenis_lapangan']) ?></td>
                         <td><?= $d['hari'] ?></td>
-                        <td><?= date('H:i', strtotime($d['jam_mulai'])) ?> - <?= date('H:i', strtotime($d['jam_selesai'])) ?></td>
+                        <td><?= $d['jam_mulai'] ?> - <?= $d['jam_selesai'] ?></td>
                         <td>Rp <?= number_format($d['harga'], 0, ',', '.') ?></td>
                     </tr>
                 <?php endforeach; ?>
@@ -137,42 +152,53 @@ require_once '../includes/header.php';
 <?php if ($payment): ?>
     <div class="card">
         <h3>Informasi Payment</h3>
-        <p><strong>Payment ID:</strong> #<?= $payment['payment_id'] ?></p>
-        <p><strong>Jumlah:</strong> Rp <?= number_format($payment['jumlah_bayar'], 0, ',', '.') ?></p>
-        <p><strong>Metode:</strong> <?= htmlspecialchars($payment['metode_pembayaran']) ?></p>
-        <p><strong>Status:</strong> 
-            <?php
-            $statusPay = $payment['status_payment'] ?: 'Pending';
 
-            $paymentClass = match ($statusPay) {
-                'Pending' => 'warning',
-                'DP' => 'info',
-                'Lunas' => 'success',
-                default => 'secondary'
-            };
+        <div class="info-cards">
+            <div class="info-card">
+                <div class="label">Payment ID</div>
+                <div class="value">#<?= $payment['payment_id'] ?></div>
+            </div>
 
-            $class = $badge[$payment['status_payment']] ?? 'info';
-            ?>
-            <span class="badge badge-<?= $paymentClass ?>">
-                <?= htmlspecialchars($statusPay) ?>
-            </span>
+            <div class="info-card">
+                <div class="label">Jumlah</div>
+                <div class="value total-harga">
+                    Rp <?= number_format($jumlah_display, 0, ',', '.') ?>
+                </div>
+            </div>
 
-        </p>
-        <?php if ($payment['tgl_pembayaran']): ?>
-            <p><strong>Tanggal Bayar:</strong> <?= date('d F Y H:i', strtotime($payment['tgl_pembayaran'])) ?></p>
-        <?php endif; ?>
+            <div class="info-card">
+                <div class="label">Metode</div>
+                <div class="value"><?= htmlspecialchars($payment['metode_pembayaran']) ?></div>
+            </div>
+
+            <div class="info-card">
+                <div class="label">Status</div>
+                <div class="value">
+                    <span class="badge badge-<?= $pay_class ?>">
+                        <?= htmlspecialchars($statusPay) ?>
+                    </span>
+                </div>
+            </div>
+
+            <div class="info-card">
+                <div class="label">Tanggal Bayar</div>
+                <div class="value">
+                    <?= $payment['tgl_pembayaran']
+                        ? date('d F Y H:i', strtotime($payment['tgl_pembayaran']))
+                        : '-' ?>
+                </div>
+            </div>
+        </div>
     </div>
 <?php else: ?>
-    <div class="alert alert-warning">Belum ada data payment</div>
+    <div class="alert" style="background:#f8d7da; color:#721c24; padding:15px; border-radius:6px;">
+        Belum ada data payment
+    </div>
 <?php endif; ?>
 
+
 <div style="margin-top:20px;">
-    <a href="index.php" class="btn btn-secondary">← Kembali</a>
+    <a href="index.php" class="btn btn-primary">Kembali</a>
 </div>
-
-<pre>
-<?php print_r($booking); ?>
-</pre>
-
 
 <?php require_once '../includes/footer.php'; ?>

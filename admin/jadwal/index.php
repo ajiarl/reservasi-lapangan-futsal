@@ -47,7 +47,7 @@ require_once '../includes/header.php';
 ?>
 
 <div class="card">
-    <form method="GET" style="display:grid; grid-template-columns:1fr 1fr 1fr auto; gap:15px; align-items:end;">
+    <form method="GET" style="display:grid; grid-template-columns:1fr  1fr 200px auto; gap:15px; align-items:end;">
         <div class="form-group" style="margin:0;">
             <label>Cari Lapangan</label>
             <input type="text" name="search" class="form-control" placeholder="Nama atau jenis" value="<?= htmlspecialchars($search) ?>">
@@ -82,7 +82,7 @@ require_once '../includes/header.php';
 </div>
 
 <div class="card">
-    <div class="d-flex justify-between">
+    <div class="d-flex justify-between" style="margin-bottom: 15px;">
         <h3>Daftar Jadwal</h3>
         <a href="tambah_jadwal.php" class="btn btn-primary">Tambah</a>
     </div>
@@ -113,7 +113,7 @@ require_once '../includes/header.php';
                         <td><?= date('H:i', strtotime($j['jam_selesai_slot'])) ?></td>
                         <td>Rp <?= number_format($j['harga_perjam_slot'], 0, ',', '.') ?></td>
                         <td>
-                            <a href="edit_jadwal.php?id=<?= $j['jadwal_id'] ?>" class="btn btn-sm">Edit</a>
+                            <a href="edit_jadwal.php?id=<?= $j['jadwal_id'] ?>" class="btn btn-edit btn-sm">Edit</a>
                             <a href="hapus_jadwal.php?id=<?= $j['jadwal_id'] ?>" class="btn btn-sm btn-danger" onclick="return confirm('Yakin hapus?')">Hapus</a>
                         </td>
                     </tr>

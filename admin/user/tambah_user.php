@@ -37,7 +37,7 @@ require_once '../includes/header.php';
 
 <div class="card">
     <h3 style="margin-bottom:20px;">Form Tambah User</h3>
-    <form method="POST" style="max-width:600px;">
+    <form method="POST" style="max-width:800px;">
         <div class="form-group">
             <label>Nama Lengkap *</label>
             <input type="text" name="nama_pelanggan" class="form-control" required>
@@ -67,13 +67,13 @@ require_once '../includes/header.php';
         <div class="form-group">
             <label>Role *</label>
             <select name="role" class="form-control" required>
-                <option value="pelanggan">Pelanggan</option>
+                <option value="customer">Customer</option>
                 <option value="admin">Admin</option>
             </select>
         </div>
         
         <div style="display:flex; gap:10px;">
-            <button type="submit" class="btn">Simpan</button>
+            <button type="submit" class="btn btn-primary">Simpan</button>
             <a href="index.php" class="btn btn-secondary">Batal</a>
         </div>
     </form>

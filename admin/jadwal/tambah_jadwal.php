@@ -46,7 +46,7 @@ require_once '../includes/header.php';
         </div>
     <?php endif; ?>
     
-    <form method="POST">
+    <form method="POST" style="max-width:800px;">
         <div class="form-group">
             <label>Pilih Lapangan *</label>
             <select name="lapangan_id" class="form-control" required>
@@ -83,7 +83,7 @@ require_once '../includes/header.php';
         </div>
         
         <div style="display:flex; gap:10px;">
-            <button type="submit" class="btn">Simpan</button>
+            <button type="submit" class="btn btn-primary">Simpan</button>
             <a href="index.php" class="btn btn-secondary">Batal</a>
         </div>
     </form>
