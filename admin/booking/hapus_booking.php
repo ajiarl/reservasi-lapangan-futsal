@@ -12,13 +12,13 @@ global $conn;
 $conn->begin_transaction();
 
 try {
-    // Delete booking_detail first (foreign key)
+    // pertama hapus booking_detail (foreign key)
     q("DELETE FROM booking_detail WHERE booking_id=?", [$id]);
     
-    // Delete payment if exists
+    // hapus payment jika ada
     q("DELETE FROM payment WHERE Bookings_booking_id=?", [$id]);
     
-    // Delete booking
+    // hapus booking
     q("DELETE FROM bookings WHERE booking_id=?", [$id]);
     
     $conn->commit();

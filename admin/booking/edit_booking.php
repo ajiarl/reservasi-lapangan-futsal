@@ -24,7 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $sql = "UPDATE bookings SET tgl_booking=?, status_booking=? WHERE booking_id=?";
     
     if (q($sql, [$tgl_booking, $status, $id])) {
-        // Sinkronisasi: Jika booking Selesai → payment Lunas
+        //Jika booking Selesai maka payment Lunas
         if ($status == 'Selesai') {
             q("UPDATE payment 
                SET status_payment='Lunas', 

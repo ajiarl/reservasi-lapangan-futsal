@@ -8,7 +8,7 @@ if (!$id) {
     exit;
 }
 
-// Check if has booking_detail
+// Cek apakah jadwal sudah dibooking
 $check = fetchOne("SELECT COUNT(*) as c FROM booking_detail WHERE jadwal_id=?", [$id]);
 
 if ($check['c'] > 0) {
@@ -16,7 +16,7 @@ if ($check['c'] > 0) {
     exit;
 }
 
-// Delete
+// Hapus
 if (q("DELETE FROM jadwallapangan WHERE jadwal_id=?", [$id])) {
     header('Location: index.php?success=Jadwal berhasil dihapus');
 } else {
