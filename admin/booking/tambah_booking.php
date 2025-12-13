@@ -47,9 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $conn->begin_transaction();
 
     try {
-        /* =====================
-           1. INSERT BOOKINGS
-           ===================== */
+        //INSERT BOOKINGS
         q(
             "INSERT INTO bookings (users_user_id, tgl_booking, total_harga, status_booking)
              VALUES (?, ?, 0, 'Pending')",
@@ -58,10 +56,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $booking_id = $conn->insert_id;
 
-        /* =====================
-           2. INSERT BOOKING DETAIL
-           (total_harga dihitung oleh trigger)
-           ===================== */
+        //INSERT BOOKING DETAIL
+        //(total_harga dihitung oleh trigger)
         foreach ($jadwal_ids as $i => $jadwal_id) {
             q(
                 "INSERT INTO booking_detail
@@ -69,13 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                  VALUES (?, ?, ?, ?, 
                     (SELECT harga_perjam_slot FROM jadwallapangan WHERE jadwal_id = ?)
                  )",
-                [
-                    $booking_id,
-                    $jadwal_id,
-                    $jam_mulai[$i],
-                    $jam_selesai[$i],
-                    $jadwal_id
-                ]
+                [$booking_id, $jadwal_id, $jam_mulai[$i], $jam_selesai[$i], $jadwal_id]
             );
         }
 
