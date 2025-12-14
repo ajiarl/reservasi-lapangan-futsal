@@ -10,10 +10,10 @@ if (isset($_GET['confirm'])) {
     $id = intval($_GET['confirm']);
     q("UPDATE payment SET status_payment='Lunas', tgl_pembayaran=NOW() WHERE payment_id=?", [$id]);
     
-    $payment = fetchOne("SELECT Bookings_booking_id FROM payment WHERE payment_id=?", [$id]);
-    if ($payment) {
-        q("UPDATE bookings SET status_booking='Berlangsung' WHERE booking_id=?", [$payment['Bookings_booking_id']]);
-    }
+    // NOTE:
+    // Status booking tidak diatur di aplikasi
+    // Seluruh perubahan status booking ditangani oleh trigger database
+
     
     header('Location: index.php?success=Payment berhasil dikonfirmasi');
     exit;

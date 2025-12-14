@@ -36,11 +36,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     
     if (q($sql, $params)) {
-        // Update booking status ke Berlangsung jika Lunas
-        if ($status == 'Lunas') {
-            q("UPDATE bookings SET status_booking='Berlangsung' WHERE booking_id=?", [$booking_id]);
-        }
-        
+        // NOTE:
+        // Status booking tidak diatur di aplikasi
+        // Seluruh perubahan status booking ditangani oleh trigger database
         header('Location: index.php?success=Payment berhasil ditambahkan');
         exit;
     }
